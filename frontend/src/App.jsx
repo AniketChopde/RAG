@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react"
 import axios from "axios"
 import "tailwindcss/tailwind.css"
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://rag-1-i0gg.onrender.com"
+
 function App() {
   const [query, setQuery] = useState("")
   const [chatHistory, setChatHistory] = useState([])
@@ -35,8 +37,8 @@ function App() {
     const loadState = async () => {
       try {
         const [hRes, dRes] = await Promise.all([
-          axios.get("http://localhost:8000/history", { params: { conversation_id: cid } }),
-          axios.get("http://localhost:8000/documents", { params: { conversation_id: cid } }),
+          axios.get(`${API_BASE_URL}/history`, { params: { conversation_id: cid } }),
+          axios.get(`${API_BASE_URL}/documents`, { params: { conversation_id: cid } }),
         ])
         setChatHistory(hRes.data.chat_history || [])
         setUploadedDocs(dRes.data.documents || [])
@@ -62,7 +64,7 @@ function App() {
     const fetchMe = async () => {
       if (!token) { setMe(null); return }
       try {
-        const res = await axios.get("http://localhost:8000/me")
+        const res = await axios.get(`${API_BASE_URL}/me`)
         setMe(res.data)
       } catch (_) {
         setMe(null)
@@ -78,7 +80,7 @@ function App() {
       const form = new FormData()
       form.append("username", username)
       form.append("password", password)
-      const res = await axios.post("http://localhost:8000/auth/login", form)
+      const res = await axios.post(`${API_BASE_URL}/auth/login`, form)
       setToken(res.data.token)
       setUploadStatus("Logged in")
       setTimeout(() => setUploadStatus(""), 2000)
@@ -90,7 +92,7 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      await axios.post("http://localhost:8000/auth/logout")
+      await axios.post(`${API_BASE_URL}/auth/logout`)
     } catch (_) {}
     setToken("")
     setUsername("")
@@ -104,7 +106,7 @@ function App() {
       const form = new FormData()
       form.append("username", username)
       form.append("password", password)
-      await axios.post("http://localhost:8000/auth/register", form)
+      await axios.post(`${API_BASE_URL}/auth/register`, form)
       setUploadStatus("User registered. You can now login.")
       setTimeout(() => setUploadStatus(""), 3000)
       setAuthMode("login")
@@ -123,7 +125,7 @@ function App() {
       formData.append("query", query)
       formData.append("conversation_id", conversationId)
 
-      const res = await axios.post("http://localhost:8000/chat/text", formData)
+      const res = await axios.post(`${API_BASE_URL}/chat/text`, formData)
       setChatHistory(res.data.chat_history)
       if (res.data.conversation_id && res.data.conversation_id !== conversationId) {
         localStorage.setItem("conversation_id", res.data.conversation_id)
@@ -163,7 +165,7 @@ function App() {
 
     setUploadStatus("Uploading document...")
     try {
-      const res = await axios.post("http://localhost:8000/upload_document", formData)
+      const res = await axios.post(`${API_BASE_URL}/upload_document`, formData)
       setUploadStatus(`Document uploaded successfully: ${file.name}`)
       setUploadedDocs((prev) => [...prev, { id: res.data.document_id, name: file.name }]) // store filename too
       setTimeout(() => setUploadStatus(""), 3000)
@@ -188,7 +190,7 @@ function App() {
       const formData = new FormData()
       formData.append("document_id", docToRemove.id)
 
-      await axios.post("http://localhost:8000/remove_document", formData)
+      await axios.post(`${API_BASE_URL}/remove_document`, formData)
       setUploadStatus("Document removed successfully")
       setUploadedDocs((prev) => prev.filter((doc) => doc.id !== docToRemove.id))
       setTimeout(() => setUploadStatus(""), 3000)
@@ -203,7 +205,7 @@ function App() {
     try {
       const formData = new FormData()
       formData.append("document_id", docId)
-      await axios.post("http://localhost:8000/remove_document", formData)
+      await axios.post(`${API_BASE_URL}/remove_document`, formData)
       setUploadedDocs((prev) => prev.filter((doc) => doc.id !== docId))
     } catch (err) {
       console.error(err)
@@ -217,7 +219,7 @@ function App() {
     try {
       const formData = new FormData()
       formData.append("conversation_id", conversationId)
-      await axios.post("http://localhost:8000/clear_history", formData)
+      await axios.post(`${API_BASE_URL}/clear_history`, formData)
       setChatHistory([])
     } catch (err) {
       console.error(err)
@@ -630,11 +632,11 @@ function AdminBuiltins() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/admin/inbuilt-documents")
+        const res = await axios.get(`${API_BASE_URL}/admin/inbuilt-documents`)
         setBuiltins(res.data.documents || [])
       } catch (e) {}
       try {
-        const fres = await axios.get("http://localhost:8000/admin/documents-folder")
+        const fres = await axios.get(`${API_BASE_URL}/admin/documents-folder`)
         setFolderFiles(fres.data.files || [])
       } catch (e) {}
     }
@@ -645,7 +647,7 @@ function AdminBuiltins() {
     try {
       const form = new FormData()
       form.append("document_id", id)
-      await axios.post("http://localhost:8000/remove_document", form)
+      await axios.post(`${API_BASE_URL}/remove_document`, form)
       setBuiltins(prev => prev.filter(b => b.id !== id))
       setStatus("Removed built-in document")
       setTimeout(() => setStatus(""), 2000)
@@ -683,7 +685,7 @@ function AdminBuiltins() {
                 try {
                   const form = new FormData()
                   form.append('filename', f.name)
-                  await axios.post('http://localhost:8000/admin/documents-folder/delete', form)
+                  await axios.post(`${API_BASE_URL}/admin/documents-folder/delete`, form)
                   setFolderFiles(prev => prev.filter(x => x.name !== f.name))
                   setStatus('Deleted file and cleaned index')
                   setTimeout(() => setStatus(''), 2000)
@@ -713,7 +715,7 @@ function UserStatsModal({ onClose, currentUser }) {
       try {
         setLoading(true)
         let endpoint = currentUser?.role === 'admin' ? 'admin/user-stats' : 'users/overview'
-        const res = await axios.get(`http://localhost:8000/${endpoint}`)
+        const res = await axios.get(`${API_BASE_URL}/${endpoint}`)
         setUserStats(res.data)
         setError("")
       } catch (e) {
