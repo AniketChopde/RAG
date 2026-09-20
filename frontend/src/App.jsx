@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import axios from "axios"
 import "tailwindcss/tailwind.css"
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://rag-1-i0gg.onrender.com"
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://rag-1-i6gg.onrender.com"
 
 function App() {
   const [query, setQuery] = useState("")
