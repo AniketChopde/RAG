@@ -108,7 +108,15 @@ except Exception as e:
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://rag-frontend-delta-pink.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+        "http://localhost:8000",
+        "*",
+    ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -196,6 +204,9 @@ def init_db():
     
     conn.commit()
     conn.close()
+
+# Auto-initialize SQLite database tables
+init_db()
 
 def ensure_conversation(conversation_id: str | None, user_id: str | None = None) -> str:
     cid = conversation_id or str(uuid.uuid4())
